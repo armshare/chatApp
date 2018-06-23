@@ -10,6 +10,12 @@ namespace ChatApp.Controllers
     {
         public ActionResult Index()
         {
+
+            if( Session["user"] != null)
+            {
+                return Redirect("/chat");
+            }
+
             return View();
         }
 

@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>pChat &mdash; Private Chatroom</title>
+    @*<link rel="stylesheet" href="@Url.Content("~/Content/app.css")">*@
+    <script src="https://js.pusher.com/4.1/pusher.min.js"></script>
+    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+   
+  @{
+      var currentUser = ViewBag.currentUser;
+
+   }
+   
+   
+      
+
+  
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">pChat</a>
+            </div>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">Log Out</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- / Navigation Bar -->
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-md-3">
+                <aside class="main">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="panel panel-default users__bar">
+                                <div class="panel-heading users__heading">
+                                    Online Users (1)
+                                </div>
+                                <div class="panel-body users__body">
+                                    <ul class="list-group">
+                                        @if ( currentUser == "arm")
+                                        {
+                                            <li class="user__item">
+                                                <div class="avatar"></div> <a href="#">Jon</a>
+                                            </li>
+                                        }
+                                        else if ( currentUser == "Jon")
+                                        {
+                                            <li class="user__item">
+                                                <div class="avatar"></div> <a href="#">Daenerys</a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+            <div class="col-xs-12 col-md-9 chat__body">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <ul class="list-group chat__main">
+                            <div class="row __chat__par__">
+                                <div class="__chat__ from__chat">
+                                    <p>Did you see Avery's sword???</p>
+                                </div>
+                            </div>
+                            <div class="row __chat__par__">
+                                <div class="__chat__ receive__chat">
+                                    <p>Err Looked normal to me...</p>
+                                </div>
+                            </div>
+                            <div class="row __chat__par__">
+                                <div class="__chat__ receive__chat">
+                                    <p>maybe I'm a hater</p>
+                                </div>
+                            </div>
+                            <div class="row __chat__par__">
+                                <div class="__chat__ from__chat">
+                                    <p>Lmaooo</p>
+                                </div>
+                            </div>
+                        </ul>
+                    </div>
+                    <div class="chat__type__body">
+                        <div class="chat__type">
+                            <textarea id="msg_box" placeholder="Type your message"></textarea>
+                        </div>
+                    </div>
+                    <div class="chat__typing">
+                        <span id="typerDisplay"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @* <script src="@Url.Content("~/Content/app.js")"></script>*@
+    
+    <script type="text/javascript">
+        var socketId = null;
+        var currentUser = '@ViewBag.currentUser' 
+        var pusher = new Pusher('8c290a9d0ed6bbacf5c5', {
+            cluster: 'ap1'
+        });
+
+        pusher.connection.bind('connected', function () {
+            socketId = pusher.connection.socket_id;
+        });
+
+        function debounce(func, wait, immediate) {
+            var timeout;
+            return function () {
+                var context = this, args = arguments;
+                var later = function () {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+                var callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) func.apply(context, args);
+            };
+        };
+       
+
+        var channel = pusher.subscribe('chat');
+        channel.bind('typing', function (data) {
+            $('#typerDisplay').text(data.typer + ' is typing...');
+            $('.chat__typing').fadeIn(100, function () {
+                $('.chat__type__body').addClass('typing_display__open');
+            }).delay(1000).fadeOut(300, function () {
+                $('.chat__type__body').removeClass('typing_display__open');
+            });
+        });
+
+        var isTypingCallback = debounce(function () {
+            $.post('/chat/typing', {
+                typer: currentUser,
+                socket_id: socketId // pass socket_id parameter to be used by server
+            });
+        }, 600, true);
+
+        $('#msg_box').keydown(isTypingCallback)
+    </script>
+</body>
+</html>
